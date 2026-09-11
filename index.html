@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>India Ultimate</title>
+
+  <!-- Google Material Symbols (Icons) -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+  <!-- Fraunces (display serif, editorial character) + Inter (body) + IBM Plex Mono (data / links) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+  <!-- PapaParse for robust CSV parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #0a0c11;
+      --bg-header: #0d1017;
+      --surface: #131720;
+      --surface-hover: #171c27;
+      --border: #232a37;
+      --border-soft: #1a202c;
+
+      --gold: #c9a25e;
+      --gold-bright: #e3c184;
+      --gold-dim: #8a7145;
+      --brick: #a94e30;
+
+      --text: #f1ecdf;
+      --text-dim: #99a1b0;
+      --text-faint: #5b6373;
+
+      --font-display: "Fraunces", Georgia, serif;
+      --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      background-color: var(--bg);
+    }
+
+    body {
+      color: var(--text);
+      font-family: var(--font-body);
+      padding-bottom: 32px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; }
+
+    button, input {
+      font-family: inherit;
+    }
+
+    button {
+      background: none;
+      border: none;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+
+    .header-inner,
+    .cards-container,
+    .categories-grid-wrap {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    /* ================= Fixed corner bar (hamburger + search pill) ================= */
+    .fixed-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 0;
+      z-index: 1200;
+      pointer-events: none;
+    }
+
+    .hamburger-btn {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(13, 16, 23, 0.72);
+      border: 1px solid var(--border-soft);
+      backdrop-filter: blur(6px);
+      color: var(--text-dim);
+      cursor: pointer;
+      pointer-events: auto;
+      transition: color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    }
+
+    .hamburger-btn:hover {
+      color: var(--gold-bright);
+      border-color: var(--gold-dim);
+    }
+
+    .hamburger-btn:active {
+      transform: scale(0.94);
+    }
+
+    .search-pill {
+      position: fixed;
+      top: 10px;
+      right: 14px;
+      display: flex;
+      align-items: center;
+      height: 42px;
+      width: 42px;
+      border-radius: 21px;
+      background: rgba(13, 16, 23, 0.9);
+      border: 1px solid var(--border-soft);
+      backdrop-filter: blur(6px);
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(-10px) scale(0.85);
+      pointer-events: none;
+      transition: opacity 0.35s cubic-bezier(.4,0,.2,1),
+                  transform 0.35s cubic-bezier(.4,0,.2,1),
+                  width 0.3s cubic-bezier(.4,0,.2,1);
+    }
+
+    body.scrolled .search-pill {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .search-pill.expanded {
+      width: min(240px, calc(100vw - 72px));
+    }
+
+    .search-pill-icon-btn {
+      flex-shrink: 0;
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-dim);
+      cursor: pointer;
+    }
+
+    .search-pill:focus-within .search-pill-icon-btn,
+    .search-pill.expanded .search-pill-icon-btn {
+      color: var(--gold-bright);
+    }
+
+    .search-pill input {
+      width: 0;
+      opacity: 0;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 13px;
+      padding-right: 12px;
+      transition: width 0.3s ease, opacity 0.2s ease;
+    }
+
+    .search-pill.expanded input {
+      width: 100%;
+      opacity: 1;
+    }
+
+    /* ================= Drawer ================= */
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 6, 9, 0.6);
+      z-index: 1300;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .drawer-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: min(280px, 78vw);
+      background: var(--bg-header);
+      border-right: 1px solid var(--border-soft);
+      z-index: 1400;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+      overflow-y: auto;
+      padding: 20px 0 20px 0;
+    }
+
+    .drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--gold-bright);
+      padding: 0 20px 16px 20px;
+      border-bottom: 1px solid var(--border-soft);
+      margin-bottom: 6px;
+    }
+
+    .drawer-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 12px 20px;
+      font-size: 14px;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .drawer-item:hover {
+      background-color: var(--surface-hover);
+      color: var(--text);
+    }
+
+    .drawer-item.active {
+      color: var(--gold-bright);
+      font-weight: 600;
+      background-color: var(--surface);
+    }
+
+    /* ================= Hero header (scrolls away, not fixed) ================= */
+    .hero-header {
+      background:
+        radial-gradient(120% 140% at 50% -40%, rgba(201,162,94,0.10), transparent 60%),
+        var(--bg-header);
+      padding: 18px 16px 16px 16px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .brand {
+      text-align: center;
+      margin-bottom: 14px;
+    }
+
+    .app-title {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--gold-bright);
+    }
+
+    .app-tagline {
+      margin-top: 5px;
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+
+    .title-ornament {
+      position: relative;
+      width: 100%;
+      height: 1px;
+      margin: 12px 0 14px 0;
+      background: linear-gradient(90deg, transparent, var(--gold-dim) 30%, var(--gold-dim) 70%, transparent);
+      opacity: 0.7;
+    }
+
+    .title-ornament::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 6px;
+      height: 6px;
+      background: var(--gold);
+      transform: translate(-50%, -50%) rotate(45deg);
+      box-shadow: 0 0 8px rgba(201,162,94,0.6);
+    }
+
+    .search-box {
+      position: relative;
+      transition: opacity 0.2s ease;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 11px 16px 11px 40px;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .search-box input:focus {
+      border-color: var(--gold-dim);
+      box-shadow: 0 0 0 3px rgba(201,162,94,0.12);
+    }
+
+    .search-box input::placeholder {
+      color: var(--text-faint);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-faint);
+      font-size: 18px;
+      pointer-events: none;
+    }
+
+    /* ================= Category grid (home view) ================= */
+    .categories-grid-wrap {
+      padding: 18px 16px 8px 16px;
+    }
+
+    .categories-grid-title {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 12px;
+    }
+
+    .categories-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .category-tile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      aspect-ratio: 1 / 1;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 6px;
+      cursor: pointer;
+      transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.15s ease;
+    }
+
+    .category-tile:hover {
+      background-color: var(--surface-hover);
+      border-color: #2c3546;
+    }
+
+    .category-tile:active {
+      transform: scale(0.97);
+    }
+
+    .category-tile-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #1c2130, #12151d);
+      border: 1px solid var(--border-soft);
+    }
+
+    .category-tile-icon img,
+    .category-tile-icon svg {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .category-tile-icon .fallback-letter {
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--gold-bright);
+    }
+
+    .category-tile-icon .material-symbols-outlined {
+      font-size: 21px;
+      color: var(--gold-bright);
+    }
+
+    .category-tile-name {
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--text-dim);
+      text-align: center;
+      line-height: 1.25;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .category-tile.all-tile .category-tile-icon {
+      background: linear-gradient(135deg, rgba(201,162,94,0.22), rgba(201,162,94,0.06));
+      border-color: var(--gold-dim);
+    }
+
+    /* ================= List view ================= */
+    .list-view-header {
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 16px 4px 16px;
+    }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-dim);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 6px 10px 6px 6px;
+      border-radius: 8px;
+      transition: color 0.15s ease, background-color 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .back-btn:hover {
+      color: var(--gold-bright);
+      background-color: var(--surface);
+    }
+
+    .back-btn .material-symbols-outlined {
+      font-size: 18px;
+    }
+
+    .list-view-title {
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ---------- Cards ---------- */
+    .cards-container {
+      padding: 12px 16px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card {
+      position: relative;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 2px solid transparent;
+      border-radius: 12px;
+      padding: 13px 14px;
+      display: flex;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+      align-items: flex-start;
+      overflow: hidden;
+      transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.15s ease;
+    }
+
+    .card:hover {
+      background-color: var(--surface-hover);
+      border-color: #2c3546;
+    }
+
+    .card:active {
+      transform: scale(0.99);
+    }
+
+    .card.pinned {
+      border-left-color: var(--gold);
+      border-color: #2d2717;
+      background-color: #171410;
+    }
+
+    /* folded-corner ledger marker for pinned entries */
+    .card.pinned::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 0 26px 26px 0;
+      border-color: transparent var(--gold) transparent transparent;
+      opacity: 0.9;
+    }
+
+    .card-logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 9px;
+      background-color: var(--border);
+      object-fit: cover;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      user-select: none;
+    }
+
+    .card.pinned .card-logo {
+      box-shadow: 0 0 0 1px rgba(201,162,94,0.35);
+    }
+
+    .card-content {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      width: 100%;
+      padding-right: 22px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .card-link {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--gold-dim);
+      margin-bottom: 6px;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .card-note {
+      font-size: 11.5px;
+      color: var(--text-dim);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* ---------- Pin Action Button ---------- */
+    .pin-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 2;
+      background: none;
+      border: none;
+      color: var(--text-faint);
+      cursor: pointer;
+      padding: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: color 0.15s ease, transform 0.15s ease;
+    }
+
+    .pin-btn:hover {
+      color: var(--gold);
+      transform: scale(1.08);
+    }
+
+    .pin-btn .material-symbols-outlined {
+      font-size: 17px;
+    }
+
+    .card.pinned .pin-btn {
+      color: #1a1408;
+      top: 5px;
+      right: 4px;
+    }
+
+    .card.pinned .pin-btn .material-symbols-outlined {
+      font-variation-settings: "FILL" 1;
+    }
+
+    .loading,
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-faint);
+      font-size: 12.5px;
+      font-family: var(--font-mono);
+      letter-spacing: 0.02em;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fixed corner controls: hamburger (left) + search pill (right, appears on scroll) -->
+  <div class="fixed-bar">
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="सभी categories देखें" onclick="openDrawer()">
+      <span class="material-symbols-outlined">menu</span>
+    </button>
+    <div class="search-pill" id="searchPill">
+      <span class="search-pill-icon-btn" onclick="focusPillInput()">
+        <span class="material-symbols-outlined">search</span>
+      </span>
+      <input type="text" id="pillSearchInput" placeholder="Search…" oninput="onSearchInput(this.value)" onfocus="expandPill()" onblur="collapsePillIfEmpty()">
+    </div>
+  </div>
+
+  <!-- Drawer: text-only category list -->
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <div class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-header">Categories</div>
+    <div id="drawerList"></div>
+  </div>
+
+  <!-- Hero header: scrolls away with the page, not sticky -->
+  <div class="hero-header" id="heroHeader">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="app-title">India Ultimate</div>
+        <div class="app-tagline">Curated Web Directory</div>
+      </div>
+      <div class="title-ornament"></div>
+      <div class="search-box">
+        <span class="material-symbols-outlined search-icon">search</span>
+        <input type="text" id="heroSearchInput" placeholder="Search the directory…" oninput="onSearchInput(this.value)">
+      </div>
+    </div>
+  </div>
+
+  <!-- Home view: category grid -->
+  <div class="categories-grid-wrap" id="categoriesGridWrap">
+    <div class="categories-grid-title">Browse by category</div>
+    <div class="categories-grid" id="categoriesGrid"></div>
+  </div>
+
+  <!-- List view: back button + title + cards -->
+  <div id="listView" style="display:none;">
+    <div class="list-view-header">
+      <button class="back-btn" onclick="showHome()">
+        <span class="material-symbols-outlined">arrow_back</span> Back
+      </button>
+      <div class="list-view-title" id="listViewTitle"></div>
+    </div>
+    <div class="cards-container" id="cardsContainer"></div>
+  </div>
+
+  <script>
+    const SHEET_ID = "1AkrtUvg2c6OawhJxXbmgViWcmTss5mSeynnCvE_6a8s";
+    const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
+
+    const DEFAULT_ICON = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 24 24' fill='%238b949e'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z'/></svg>";
+
+    let allData = [];
+    let categoriesOrder = [];   // ordered list of unique category names
+    let categoriesIcons = {};   // category name -> raw icon value (svg / base64 / url)
+    let pinnedIds = JSON.parse(localStorage.getItem('pinnedWebsites') || '[]');
+
+    // ---- state ----
+    // currentCategory: null = home view. 'ALL' = list view showing everything.
+    // otherwise = a specific category name.
+    let currentCategory = null;
+    let searchQuery = '';
+    let autoAllFromSearch = false; // true when we auto-entered 'ALL' list purely because of a home search
+
+    /* ---------------------------- helpers ---------------------------- */
+
+    function isUrl(str) {
+      if (!str) return false;
+      str = str.trim();
+      return str.startsWith('http://') || str.startsWith('https://') || str.startsWith('data:image');
+    }
+
+    function formatImageUrl(url) {
+      if (!url) return '';
+      url = url.trim();
+      if (url.includes('drive.google.com')) {
+        const idMatch = url.match(/[\/=]([a-zA-Z0-9_-]{25,})/);
+        if (idMatch && idMatch[1]) {
+          return `https://lh3.googleusercontent.com/d/${idMatch[1]}`;
+        }
+      }
+      return url;
+    }
+
+    function handleImgError(img) {
+      img.onerror = null;
+      img.src = DEFAULT_ICON;
+    }
+
+    function togglePin(event, siteName) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (pinnedIds.includes(siteName)) {
+        pinnedIds = pinnedIds.filter(id => id !== siteName);
+      } else {
+        pinnedIds.push(siteName);
+      }
+
+      localStorage.setItem('pinnedWebsites', JSON.stringify(pinnedIds));
+      render();
+    }
+
+    // Renders a category icon from a raw value that may be:
+    // - inline SVG markup ("<svg ...>...</svg>")
+    // - a URL (http/https) or a data: URI (base64)
+    // - empty -> falls back to the category's first letter
+    function categoryIconHtml(raw, categoryName) {
+      const val = (raw || '').trim();
+      if (val.startsWith('<svg')) {
+        return val;
+      }
+      if (isUrl(val)) {
+        return `<img src="${formatImageUrl(val)}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'fallback-letter',textContent:'${(categoryName || '?').charAt(0).toUpperCase()}'}))">`;
+      }
+      const letter = (categoryName || '?').trim().charAt(0).toUpperCase() || '?';
+      return `<span class="fallback-letter">${letter}</span>`;
+    }
+
+    /* ---------------------------- data loading ---------------------------- */
+
+    async function fetchData() {
+      let text;
+      try {
+        const response = await fetch(CSV_URL);
+        if (!response.ok) {
+          throw new Error(`Sheet responded with status ${response.status}`);
+        }
+        text = await response.text();
+      } catch (error) {
+        document.getElementById('categoriesGrid').innerHTML =
+          `<div class="empty-state">Couldn't reach the directory. Check your connection.<br>(${error.message})<br><button onclick="fetchData()" style="margin-top:10px;padding:8px 16px;border:1px solid var(--border);border-radius:8px;color:var(--gold-bright);cursor:pointer;">Retry</button></div>`;
+        return;
+      }
+
+      // Parsing/rendering errors are handled separately so a bug here never
+      // gets mistaken for a network problem.
+      try {
+        Papa.parse(text, {
+          header: true,
+          skipEmptyLines: true,
+          transformHeader: function(h) {
+            return h.trim().toLowerCase();
+          },
+          complete: function(results) {
+            allData = results.data;
+            setupCategories();
+            render();
+          }
+        });
+      } catch (error) {
+        document.getElementById('categoriesGrid').innerHTML =
+          `<div class="empty-state">Directory data could not be displayed.<br>(${error.message})</div>`;
+        console.error(error);
+      }
+    }
+
+    function getCategoryIconRaw(row) {
+      return row['category icon'] || row['icon'] || row['cat icon'] || row['category logo'] || row['c-icon'] || '';
+    }
+
+    function setupCategories() {
+      categoriesOrder = [];
+      categoriesIcons = {};
+
+      allData.forEach(item => {
+        const cat = item['category'] ? item['category'].trim() : '';
+        if (!cat) return;
+
+        if (!categoriesOrder.includes(cat)) {
+          categoriesOrder.push(cat);
+          categoriesIcons[cat] = '';
+        }
+
+        const icon = getCategoryIconRaw(item).trim();
+        if (icon && !categoriesIcons[cat]) {
+          categoriesIcons[cat] = icon;
+        }
+      });
+
+      renderDrawerList();
+    }
+
+    /* ---------------------------- navigation / state changes ---------------------------- */
+
+    function showHome() {
+      currentCategory = null;
+      searchQuery = '';
+      autoAllFromSearch = false;
+      render();
+    }
+
+    function openCategory(cat) {
+      currentCategory = cat;
+      searchQuery = '';
+      autoAllFromSearch = false;
+      closeDrawer();
+      render();
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+
+    function onSearchInput(value) {
+      searchQuery = value;
+
+      if (searchQuery && currentCategory === null) {
+        currentCategory = 'ALL';
+        autoAllFromSearch = true;
+      } else if (!searchQuery && autoAllFromSearch) {
+        currentCategory = null;
+        autoAllFromSearch = false;
+      }
+
+      render();
+    }
+
+    function expandPill() {
+      document.getElementById('searchPill').classList.add('expanded');
+    }
+
+    function focusPillInput() {
+      document.getElementById('searchPill').classList.add('expanded');
+      document.getElementById('pillSearchInput').focus();
+    }
+
+    function collapsePillIfEmpty() {
+      if (!document.getElementById('pillSearchInput').value) {
+        document.getElementById('searchPill').classList.remove('expanded');
+      }
+    }
+
+    function openDrawer() {
+      document.getElementById('drawer').classList.add('open');
+      document.getElementById('drawerOverlay').classList.add('open');
+    }
+
+    function closeDrawer() {
+      document.getElementById('drawer').classList.remove('open');
+      document.getElementById('drawerOverlay').classList.remove('open');
+    }
+
+    /* ---------------------------- rendering ---------------------------- */
+
+    function syncSearchInputs() {
+      const hero = document.getElementById('heroSearchInput');
+      const pill = document.getElementById('pillSearchInput');
+      if (hero.value !== searchQuery) hero.value = searchQuery;
+      if (pill.value !== searchQuery) pill.value = searchQuery;
+      if (searchQuery) {
+        document.getElementById('searchPill').classList.add('expanded');
+      }
+    }
+
+    function render() {
+      syncSearchInputs();
+
+      const isHome = currentCategory === null;
+      document.getElementById('categoriesGridWrap').style.display = isHome ? '' : 'none';
+      document.getElementById('listView').style.display = isHome ? 'none' : '';
+
+      if (isHome) {
+        renderCategoryGrid();
+      } else {
+        renderListView();
+      }
+    }
+
+    function renderCategoryGrid() {
+      const grid = document.getElementById('categoriesGrid');
+
+      if (allData.length === 0) {
+        grid.innerHTML = `<div class="loading" style="grid-column: 1 / -1;">Loading the directory…</div>`;
+        return;
+      }
+
+      let html = `
+        <button class="category-tile all-tile" onclick="openCategory('ALL')">
+          <div class="category-tile-icon"><span class="material-symbols-outlined">apps</span></div>
+          <div class="category-tile-name">सभी वेबसाइट</div>
+        </button>
+      `;
+
+      html += categoriesOrder.map(cat => `
+        <button class="category-tile" onclick="openCategory('${cat.replace(/'/g, "\\'")}')">
+          <div class="category-tile-icon">${categoryIconHtml(categoriesIcons[cat], cat)}</div>
+          <div class="category-tile-name">${cat}</div>
+        </button>
+      `).join('');
+
+      grid.innerHTML = html;
+    }
+
+    function renderDrawerList() {
+      const list = document.getElementById('drawerList');
+      let html = `<button class="drawer-item" onclick="openCategory('ALL')">सभी वेबसाइट</button>`;
+      html += categoriesOrder.map(cat => `
+        <button class="drawer-item" onclick="openCategory('${cat.replace(/'/g, "\\'")}')">${cat}</button>
+      `).join('');
+      list.innerHTML = html;
+    }
+
+    function getFilteredData() {
+      const query = searchQuery.toLowerCase();
+
+      let filtered = allData.filter(item => {
+        const cat = item['category'] ? item['category'].trim() : '';
+        const matchesCategory = currentCategory === 'ALL' || cat === currentCategory;
+        const name = (item['web site name'] || '').toLowerCase();
+        const note = (item['note'] || '').toLowerCase();
+        const matchesSearch = !query || name.includes(query) || note.includes(query);
+        return matchesCategory && matchesSearch;
+      });
+
+      filtered.sort((a, b) => {
+        const aName = a['web site name'] || '';
+        const bName = b['web site name'] || '';
+        const aPinned = pinnedIds.includes(aName);
+        const bPinned = pinnedIds.includes(bName);
+        return bPinned - aPinned;
+      });
+
+      return filtered;
+    }
+
+    function renderListView() {
+      const titleEl = document.getElementById('listViewTitle');
+      if (searchQuery) {
+        titleEl.textContent = `खोज: "${searchQuery}"`;
+      } else {
+        titleEl.textContent = currentCategory === 'ALL' ? 'सभी वेबसाइट' : currentCategory;
+      }
+      renderCards(getFilteredData());
+    }
+
+    function renderCards(data) {
+      const container = document.getElementById('cardsContainer');
+
+      if (data.length === 0) {
+        container.innerHTML = `<div class="empty-state">No matches in the ledger yet.</div>`;
+        return;
+      }
+
+      container.innerHTML = data.map(item => {
+        const name = item['web site name'] || 'Untitled';
+        const rawLink = item['web link'] || '#';
+        const formattedLink = rawLink.startsWith('http') ? rawLink : `https://${rawLink}`;
+        const logoRaw = item['logo url'] || '';
+        const isPinned = pinnedIds.includes(name);
+
+        let logoHtml = '';
+        if (isUrl(logoRaw)) {
+          const imgUrl = formatImageUrl(logoRaw);
+          logoHtml = `<img class="card-logo" src="${imgUrl}" alt="Logo" onerror="handleImgError(this)">`;
+        } else if (logoRaw.trim() !== '') {
+          logoHtml = `<div class="card-logo">${logoRaw.trim()}</div>`;
+        } else {
+          logoHtml = `<img class="card-logo" src="${DEFAULT_ICON}" alt="Logo">`;
+        }
+
+        return `
+          <a href="${formattedLink}" target="_blank" class="card ${isPinned ? 'pinned' : ''}">
+            ${logoHtml}
+            <div class="card-content">
+              <div class="card-title">${name}</div>
+              <div class="card-link">${item['web link'] || ''}</div>
+              <div class="card-note">${item['note'] ? 'NOTE : ' + item['note'] : ''}</div>
+            </div>
+            <button class="pin-btn" title="Pin Website" onclick="togglePin(event, '${name.replace(/'/g, "\\'")}')">
+              <span class="material-symbols-outlined">push_pin</span>
+            </button>
+          </a>
+        `;
+      }).join('');
+    }
+
+    /* ---------------------------- scroll: dock search into the corner ---------------------------- */
+
+    let scrollTicking = false;
+    window.addEventListener('scroll', () => {
+      if (scrollTicking) return;
+      scrollTicking = true;
+      requestAnimationFrame(() => {
+        document.body.classList.toggle('scrolled', window.scrollY > 60);
+        scrollTicking = false;
+      });
+    });
+
+    fetchData();
+  </script>
+</body>
+</html>
